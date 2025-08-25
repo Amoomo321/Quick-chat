@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quick Chat — Login</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <main class="container auth">
+    <h1 class="brand">Quick Chat</h1>
+    <p class="subtitle">Fast & simple messaging (prototype)</p>
+
+    <form id="loginForm" class="card">
+      <div class="field">
+        <label for="username">Username</label>
+        <input id="username" type="text" autocomplete="username" required />
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" type="password" autocomplete="current-password" required />
+      </div>
+      <button type="submit" class="btn primary">Login</button>
+      <p class="hint">
+        No real accounts — coursework demo only. Don’t use a real password.
+      </p>
+      <p class="muted">
+        New here?
+        <a href="signup.html">Create an account</a>
+      </p>
+    </form>
+  </main>
+
+  <footer class="footer">© 2025 Quick Chat – prototype</footer>
+
+  <script>
+    // PWA: register service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+
+    // Demo "DB" = localStorage.users (object: {username: {password}})
+    function getUsers() {
+      return JSON.parse(localStorage.getItem('qc_users') || '{}');
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const u = document.getElementById('username').value.trim();
+      const p = document.getElementById('password').value;
+
+      const users = getUsers();
+      if (!users[u]) {
+        alert('User not found. Please Sign up first.');
+        return;
+      }
+      if (users[u].password !== p) {
+        alert('Incorrect password.');
+        return;
+      }
+      // save active session
+      localStorage.setItem('qc_user', u);
+      location.href = 'chat.html';
+    });
+  </script>
+</body>
+</html>

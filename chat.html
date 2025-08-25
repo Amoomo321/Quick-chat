@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quick Chat</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .notification {
+      position: relative;
+      display: inline-block;
+    }
+    .notification .badge {
+      position: absolute;
+      top: -5px;
+      right: -8px;
+      background: red;
+      color: white;
+      border-radius: 50%;
+      padding: 2px 6px;
+      font-size: 12px;
+      font-weight: bold;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-row">
+      <h1 class="brand small">Quick Chat</h1>
+      <div class="actions">
+        <div class="notification">
+          <i class="fas fa-bell" id="notificationBell" style="cursor: pointer; font-size: 24px;"></i>
+          <span class="badge" id="notificationBadge">0</span>
+        </div>
+        <button id="logoutBtn" class="btn">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container chat">
+    <section id="chatWindow" class="chat-window"></section>
+
+    <form id="messageForm" class="message-box">
+      <input id="messageInput" type="text" placeholder="Type a message…" required />
+      <button type="submit" class="btn primary">Send</button>
+    </form>
+  </main>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+
+    const user = localStorage.getItem('qc_user');
+    if (!user) location.href = 'index.html';
+
+    const KEY = 'qc_messages';
+    let messages = JSON.parse(localStorage.getItem(KEY) || '[]');
+    const chatWindow = document.getElementById('chatWindow');
+    const form = document.getElementById('messageForm');
+    const input = document.getElementById('messageInput');
+    const bell = document.getElementById('notificationBell');
+    const badge = document.getElementById('notificationBadge');
+
+    let notificationsEnabled = false;
+    let unreadCount = 0;
+    let botName = "App Owner";
+
+    function render() {
+      chatWindow.innerHTML = '';
+      messages.forEach(m => {
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble ' + (m.user === user ? 'me' : 'them');
+        bubble.innerHTML =
+          `<div class="bubble-user">${m.user}</div>
+           <div class="bubble-text">${m.text}</div>
+           <div class="bubble-time">${new Date(m.ts).toLocaleTimeString()}</div>`;
+        chatWindow.appendChild(bubble);
+      });
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+    render();
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+      const msg = { user, text, ts: Date.now() };
+      messages.push(msg);
+      localStorage.setItem(KEY, JSON.stringify(messages));
+      input.value = '';
+      render();
+
+      // Simulate bot reply
+      setTimeout(() => {
+        const reply = {
+          user: botName,
+          text: `Hello ${user}, thanks for your message!`,
+          ts: Date.now()
+        };
+        messages.push(reply);
+        localStorage.setItem(KEY, JSON.stringify(messages));
+        render();
+
+        // Increment unread count
+        unreadCount++;
+        badge.textContent = unreadCount;
+        badge.style.display = 'inline';
+
+        // Push notification (if allowed)
+        if (notificationsEnabled && Notification.permission === 'granted') {
+          navigator.serviceWorker.getRegistration().then(reg => {
+            reg?.showNotification('New message from App Owner', {
+              body: reply.text,
+              icon: 'img/icon-192.png',
+            });
+          });
+        }
+      }, 2000);
+    });
+
+    bell.addEventListener('click', async () => {
+      // Reset unread counter when bell is clicked
+      unreadCount = 0;
+      badge.style.display = 'none';
+
+      if (!('Notification' in window)) {
+        alert('Notifications not supported on this browser.');
+        return;
+      }
+      if (!notificationsEnabled) {
+        const perm = await Notification.requestPermission();
+        if (perm === 'granted') {
+          notificationsEnabled = true;
+        }
+      } else {
+        notificationsEnabled = false;
+      }
+    });
+
+    document.getElementById('logoutBtn').onclick = () => {
+      localStorage.removeItem('qc_user');
+      location.href = 'index.html';
+    };
+
+    window.addEventListener('storage', (e) => {
+      if (e.key === KEY) {
+        messages = JSON.parse(e.newValue || '[]');
+        render();
+      }
+    });
+  </script>
+</body>
+</html>

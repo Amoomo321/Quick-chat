@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Quick Chat — Mobile Web Prototype</title>
+  <meta name="theme-color" content="#0ea5e9" />
+  <style>
+    :root{
+      --bg:#0b1220; --card:#0f172a; --muted:#94a3b8; --text:#e5e7eb;
+      --brand:#0ea5e9; --brand-2:#22d3ee; --danger:#ef4444; --success:#10b981;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .phone{width:375px; max-width:100vw; height:720px; max-height:100vh;
+      background:var(--card); border-radius:28px;
+      box-shadow:0 20px 60px rgba(0,0,0,.35), inset 0 0 0 2px rgba(255,255,255,.06);
+      overflow:hidden; position:relative;
+    }
+    header{
+      height:56px; display:flex; align-items:center; gap:10px; padding:0 16px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      background:linear-gradient(180deg, rgba(14,165,233,.1), transparent);
+    }
+    .pill{display:inline-flex; align-items:center; gap:6px; padding:6px 10px;
+      border-radius:999px; background:rgba(14,165,233,.15); color:#b3e7ff; font-size:12px}
+    .spacer{flex:1}
+    .btn{appearance:none; border:0; background:var(--brand); color:white;
+      padding:10px 12px; border-radius:12px; font-weight:600; cursor:pointer}
+    .btn.secondary{background:transparent; color:var(--brand);
+      border:1px solid rgba(14,165,233,.35)}
+    .btn.ghost{background:transparent; color:var(--text);
+      border:1px solid rgba(255,255,255,.08)}
+    .btn.full{width:100%}
+    .btn.danger{background:var(--danger)}
+    .screen{position:absolute; inset:56px 0 0 0; display:none}
+    .screen.active{display:block}
+    .container{padding:16px}
+    .card{background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06); border-radius:16px; padding:16px}
+    .title{font-size:20px; font-weight:800; margin:0 0 12px}
+    label{font-size:12px; color:var(--muted); display:block; margin-bottom:6px}
+    .input{width:100%; padding:12px; border-radius:12px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(0,0,0,.2); color:var(--text)}
+    .row{display:grid; grid-template-columns:1fr; gap:12px}
+    .muted{color:var(--muted); font-size:13px}
+    .search{display:flex; gap:8px; margin-bottom:12px}
+    .chat-item{display:flex; align-items:center; gap:12px; padding:12px;
+      border-radius:14px; border:1px solid rgba(255,255,255,.06);
+      background:rgba(255,255,255,.02); cursor:pointer}
+    .chat-item:hover{background:rgba(255,255,255,.04)}
+    .avatar{width:40px; height:40px; border-radius:12px;
+      display:grid; place-items:center; font-weight:800; color:#003a4b;
+      background:linear-gradient(135deg,#7dd3fc,#67e8f9)}
+    .subtitle{font-size:12px; color:var(--muted)}
+    .chat{display:flex; flex-direction:column; height:100%}
+    .messages{flex:1; overflow-y:auto; padding:10px 12px;
+      display:flex; flex-direction:column; gap:8px}
+    .bubble{max-width:75%; padding:10px 12px; border-radius:14px;
+      word-wrap:break-word; white-space:pre-wrap}
+    .me{align-self:flex-end; background:linear-gradient(135deg, var(--brand), var(--brand-2)); color:#053746}
+    .them{align-self:flex-start; background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.08)}
+    .meta{font-size:11px; color:var(--muted); margin-top:4px}
+    .composer{display:flex; gap:8px; padding:10px;
+      border-top:1px solid rgba(255,255,255,.06); background:rgba(0,0,0,.2)}
+    .toast{position:absolute; bottom:80px; left:50%;
+      transform:translateX(-50%); background:rgba(0,0,0,.7);
+      color:white; padding:8px 12px; border-radius:999px;
+      font-size:13px; display:none}
+    .toast.show{display:block}
+    .hidden{display:none !important}
+    .time{font-variant-numeric:tabular-nums}
+  </style>
+</head>
+<body>
+  <div class="phone" role="application" aria-label="Quick Chat app">
+    <header>
+      <div class="pill" id="platformPill">Quick Chat · Android & iOS</div>
+      <div class="spacer"></div>
+      <button class="btn ghost" id="enableNotifBtn">Enable Notifications</button>
+      <button class="btn danger hidden" id="logoutBtn">Logout</button>
+    </header>
+
+    <!-- Auth Screen -->
+    <main class="screen active" id="authScreen">
+      <div class="container">
+        <div class="card">
+          <h2 class="title">Welcome to Quick Chat 👋</h2>
+          <p class="muted" style="margin-top:-6px">Log in or sign up to start chatting securely.</p>
+          <div class="row" style="margin-top:12px">
+            <div>
+              <label for="email">Email</label>
+              <input id="email" class="input" type="email" placeholder="you@example.com" autocomplete="username" />
+            </div>
+            <div>
+              <label for="password">Password</label>
+              <input id="password" class="input" type="password" placeholder="••••••••" autocomplete="current-password" />
+            </div>
+            <div style="display:flex; gap:8px">
+              <button class="btn full" id="loginBtn">Log In</button>
+              <button class="btn full secondary" id="signupBtn">Sign Up</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Chats List -->
+    <section class="screen" id="listScreen">
+      <div class="container">
+        <div class="search">
+          <input class="input" id="search" placeholder="Search chats" />
+          <button class="btn secondary" id="newChatBtn">New</button>
+        </div>
+        <div class="card" style="display:flex; flex-direction:column; gap:8px" id="chatList"></div>
+      </div>
+    </section>
+
+    <!-- Chat View -->
+    <section class="screen" id="chatScreen">
+      <div class="chat">
+        <div class="messages" id="messages"></div>
+        <form class="composer" id="composer">
+          <input class="input" id="messageInput" placeholder="Type a message" autocomplete="off" />
+          <button class="btn" type="submit">Send</button>
+        </form>
+      </div>
+    </section>
+
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <script>
+    const store = {
+      get(key, fallback){ try{ return JSON.parse(localStorage.getItem(key)) ?? fallback }catch{ return fallback } },
+      set(key, value){ localStorage.setItem(key, JSON.stringify(value)) },
+      del(key){ localStorage.removeItem(key) }
+    }
+
+    const K = {
+      users: 'qc_users',
+      session: 'qc_session',
+      chats: 'qc_chats'
+    }
+
+    const $ = sel => document.querySelector(sel)
+    const fmtTime = ts => new Date(ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+    const toast = (msg, ms=1600) => { const el=$('#toast'); el.textContent = msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'), ms) }
+
+    function currentUser(){ return store.get(K.session,null) }
+    function setSession(email){ store.set(K.session,{email}); $('#logoutBtn').classList.remove('hidden') }
+    function clearSession(){ store.del(K.session); $('#logoutBtn').classList.add('hidden') }
+
+    const hash = str => btoa(unescape(encodeURIComponent(str)))
+
+    function show(screenId){
+      document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'))
+      $("#"+screenId).classList.add('active')
+    }
+
+    function ensureUserStorage(){
+      if(!store.get(K.users)) store.set(K.users,{})
+      if(!store.get(K.chats)) store.set(K.chats,{})
+    }
+
+    function signup(email, password){
+      ensureUserStorage()
+      const users = store.get(K.users,{})
+      if(users[email]) throw new Error('Account already exists')
+      users[email] = { email, passwordHash: hash(password) }
+      store.set(K.users, users)
+      const chats = store.get(K.chats,{})
+      chats[email] = { conversations: { 'bot@quick': [ { from:'bot@quick', text:`Hey ${email.split('@')[0]}! Welcome to Quick Chat 🎉`, ts:Date.now() } ] } }
+      store.set(K.chats, chats)
+      setSession(email)
+    }
+
+    function login(email, password){
+      const users = store.get(K.users,{})
+      const u = users[email]
+      if(!u || u.passwordHash !== hash(password)) throw new Error('Invalid credentials')
+      setSession(email)
+    }
+
+    function renderChatList(){
+      const sess = currentUser(); if(!sess) return
+      const chats = store.get(K.chats,{})[sess.email]
+      const root = $('#chatList'); root.innerHTML = ''
+      const convs = chats?.conversations || {}
+      Object.entries(convs).forEach(([peerId, msgs])=>{
+        if (!msgs.length) return;
+        const last = msgs[msgs.length-1]
+        const el = document.createElement('div')
+        el.className = 'chat-item'
+        el.innerHTML = `
+          <div class="avatar">${peerId[0].toUpperCase()}</div>
+          <div style="flex:1">
+            <div style="display:flex; justify-content:space-between; gap:8px">
+              <div style="font-weight:700">${peerId}</div>
+              <div class="subtitle time">${fmtTime(last.ts)}</div>
+            </div>
+            <div class="subtitle" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis">${last.text}</div>
+          </div>
+        `
+        el.addEventListener('click', ()=>openChat(peerId))
+        root.appendChild(el)
+      })
+      if(Object.keys(convs).length===0){
+        const empty = document.createElement('div')
+        empty.className = 'subtitle'
+        empty.style.padding = '12px'
+        empty.textContent = 'No chats yet. Tap New to start one.'
+        root.appendChild(empty)
+      }
+    }
+
+    let currentPeer = null
+    function openChat(peerId){
+      currentPeer = peerId
+      show('chatScreen')
+      renderMessages()
+    }
+
+    function ensureConversation(email, peerId){
+      const all = store.get(K.chats,{})
+      if(!all[email]) all[email] = { conversations:{} }
+      if(!all[email].conversations[peerId]) all[email].conversations[peerId] = []
+      store.set(K.chats, all)
+    }
+
+    function addMessage(email, peerId, from, text){
+      ensureConversation(email, peerId)
+      const all = store.get(K.chats,{})
+      all[email].conversations[peerId].push({from, text, ts:Date.now()})
+      store.set(K.chats, all)
+    }
+
+    function renderMessages(){
+      const sess = currentUser(); if(!sess) return
+      const all = store.get(K.chats,{})
+      const msgs = all[sess.email]?.conversations[currentPeer] || []
+      const box = $('#messages'); box.innerHTML = ''
+      msgs.forEach(m=>{
+        const wrap = document.createElement('div')
+        wrap.className = 'bubble ' + (m.from===sess.email ? 'me' : 'them')
+        wrap.innerHTML = `${m.text}<div class="meta">${m.from===sess.email? 'You' : currentPeer} · <span class="time">${fmtTime(m.ts)}</span></div>`
+        box.appendChild(wrap)
+      })
+      box.scrollTop = box.scrollHeight
+    }
+
+    $('#composer').addEventListener('submit', (e)=>{
+      e.preventDefault()
+      const input = $('#messageInput')
+      const text = input.value.trim()
+      if(!text) return
+      const sess = currentUser(); if(!sess || !currentPeer) return
+      addMessage(sess.email, currentPeer, sess.email, text)
+      input.value = ''
+      renderMessages()
+      if(currentPeer==='bot@quick'){
+        setTimeout(()=>{
+          const reply = `Echo: ${text}`
+          addMessage(sess.email, currentPeer, 'bot@quick', reply)
+          renderMessages()
+          maybeNotify('New message from Quick Bot', reply)
+        }, 600 + Math.random()*800)
+      }
+    })
+
+    $('#newChatBtn').addEventListener('click', ()=>{
+      const sess = currentUser(); if(!sess) return
+      const peerId = prompt('Enter contact ID (e.g., user@domain)', 'bot@quick')
+      if(!peerId) return
+      ensureConversation(sess.email, peerId)
+      renderChatList(); openChat(peerId)
+    })
+
+    $('#loginBtn').addEventListener('click', ()=>{
+      const email = $('#email').value.trim().toLowerCase()
+      const password = $('#password').value
+      if(!email || !password) return toast('Enter email and password')
+      try{ login(email,password); toast('Logged in'); afterAuth() }catch(e){ toast(e.message) }
+    })
+
+    $('#signupBtn').addEventListener('click', ()=>{
+      const email = $('#email').value.trim().toLowerCase()
+      const password = $('#password').value
+      if(password.length < 6) return toast('Use at least 6 characters')
+      if(!email || !password) return toast('Enter email and password')
+      try{ signup(email,password); toast('Account created'); afterAuth() }catch(e){ toast(e.message) }
+    })
+
+    $('#logoutBtn').addEventListener('click', ()=>{
+      clearSession(); show('authScreen'); toast('Logged out')
+    })
+
+    function afterAuth(){
+      $('#email').value=''; $('#password').value=''
+      show('listScreen'); renderChatList()
+      $('#logoutBtn').classList.remove('hidden')
+    }
+
+    const enableBtn = $('#enableNotifBtn')
+    enableBtn.addEventListener('click', async ()=>{
+      if(!('Notification' in window)) return toast('Notifications not supported')
+      const permission = await Notification.requestPermission()
+      if(permission==='granted'){ toast('Notifications enabled 🎉') }
+      else{ toast('Permission denied') }
+    })
+
+    function maybeNotify(title, body){
+      if(!('Notification' in window)) return
+      if(document.visibilityState==='visible') return
+      if(Notification.permission==='granted') new Notification(title, { body })
+    }
+
+    (function init(){
+      ensureUserStorage()
+      const sess = currentUser()
+      if(sess){ show('listScreen'); renderChatList(); $('#logoutBtn').classList.remove('hidden') }
+      const ua = navigator.userAgent
+      const isAndroid = /Android/i.test(ua)
+      const isIOS = /iPhone|iPad|iPod/i.test(ua)
+      const pill = document.getElementById('platformPill')
+      pill.textContent = isAndroid ? 'Quick Chat · Android' : isIOS ? 'Quick Chat · iOS' : 'Quick Chat · Android & iOS'
+    })()
+  </script>
+</body>
+</html>

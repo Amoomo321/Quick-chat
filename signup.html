@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quick Chat — Sign up</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <main class="container auth">
+    <h1 class="brand">Quick Chat</h1>
+    <p class="subtitle">Create an account (local demo)</p>
+
+    <form id="signupForm" class="card">
+      <div class="field">
+        <label for="username">Username</label>
+        <input id="username" type="text" required />
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" type="password" required />
+      </div>
+      <div class="field">
+        <label for="confirm">Confirm Password</label>
+        <input id="confirm" type="password" required />
+      </div>
+      <button type="submit" class="btn primary">Create Account</button>
+      <p class="muted"><a href="index.html">Back to Login</a></p>
+    </form>
+  </main>
+
+  <footer class="footer">© 2025 Quick Chat – prototype</footer>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+
+    function getUsers() {
+      return JSON.parse(localStorage.getItem('qc_users') || '{}');
+    }
+    function saveUsers(u) {
+      localStorage.setItem('qc_users', JSON.stringify(u));
+    }
+
+    document.getElementById('signupForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const u = document.getElementById('username').value.trim();
+      const p = document.getElementById('password').value;
+      const c = document.getElementById('confirm').value;
+
+      if (!u.match(/^[A-Za-z0-9_]{3,20}$/)) {
+        alert('Username: 3–20 chars, letters/numbers/underscore.');
+        return;
+      }
+      if (p.length < 4) {
+        alert('Use at least 4 characters for this demo.');
+        return;
+      }
+      if (p !== c) {
+        alert('Passwords do not match.');
+        return;
+      }
+      const users = getUsers();
+      if (users[u]) {
+        alert('Username already exists.');
+        return;
+      }
+      users[u] = { password: p };
+      saveUsers(users);
+      alert('Account created! Please login.');
+      location.href = 'index.html';
+    });
+  </script>
+</body>
+</html>
